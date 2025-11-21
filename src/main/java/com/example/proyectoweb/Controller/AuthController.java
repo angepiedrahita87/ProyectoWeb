@@ -1,27 +1,62 @@
 package com.example.proyectoweb.Controller;
 
-import com.example.proyectoweb.Dto.LoginDto;
-import com.example.proyectoweb.Servicio.PersonaService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.proyectoweb.Dto.AuthenticationDto;
+import com.example.proyectoweb.Dto.AuthorizedDto;
+import com.example.proyectoweb.Dto.PersonaDto;
+import com.example.proyectoweb.Servicio.PersonaService;
+import com.example.proyectoweb.security.JwtUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:4200")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*") // por si el front pega desde otro host
 public class AuthController {
 
-    private final PersonaService personas;
-
-
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
+    private final PersonaService personaService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDto req) {
-        return personas.obtenerPorEmail(req.getEmail())
-                .filter(p -> p.getPassword() != null && p.getPassword().equals(req.getPassword()))
-                .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas"));
+    public ResponseEntity<?> login(@RequestBody AuthenticationDto request) {
+        try {
+            // 1. Autenticar credenciales (email + password)
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            // 2. Generar token
+            String token = jwtUtil.generateToken(userDetails);
+
+            // 3. Traer info de la persona para el front
+            PersonaDto personaDto = personaService.obtenerPorEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            AuthorizedDto response = new AuthorizedDto(token, personaDto);
+
+            return ResponseEntity.ok(response);
+
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity.status(401).body("Credenciales inválidas");
+        }
     }
 }
