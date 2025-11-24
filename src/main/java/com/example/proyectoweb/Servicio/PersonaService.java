@@ -32,7 +32,7 @@ public class PersonaService {
         Persona e = mapper.map(dto, Persona.class);
         e.setId(null);
 
-        // Hashear contraseña si viene
+        // 🔐 Hashear contraseña (si es obligatorio podrías validar que no venga null/blank)
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             e.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -47,7 +47,7 @@ public class PersonaService {
         return toDto(e);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Optional<PersonaDto> obtener(Long id) {
         return repo.findById(id).map(this::toDto);
     }
@@ -98,6 +98,8 @@ public class PersonaService {
         dto.setOrganizationId(
                 e.getOrganization() != null ? e.getOrganization().getId() : null
         );
+        // Nunca expone el password (ni el hash) al front
+        dto.setPassword(null);
         return dto;
     }
 }
