@@ -2,16 +2,16 @@ name: Build and Deploy to MicroK8s
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["main"]
 
 env:
   IMAGE_NAME: proyectoweb
   NAMESPACE: tilines
 
 jobs:
-
   build-and-push:
     runs-on: self-hosted
+
     permissions:
       contents: read
       packages: write
@@ -28,13 +28,15 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}   # o GHCR_TOKEN
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest .
+        run: |
+          docker build -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest .
 
       - name: Push Docker image
-        run: docker push ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest
+        run: |
+          docker push ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest
 
   deploy:
     runs-on: self-hosted
@@ -47,7 +49,7 @@ jobs:
       - name: Configurar kubectl (MicroK8s)
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          printf "%s\n" "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
       - name: Aplicar manifiesto completo
-        run: kubectl apply -f k8s.yaml
+        run: kubectl apply -f k8s/k8s.yaml

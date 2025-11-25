@@ -18,9 +18,12 @@ spec:
       labels:
         app: proyectoweb
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # 👈 usamos el secret que creaste
       containers:
         - name: proyectoweb
-          image: ghcr.io/merengonsitos/proyectoweb:latest   # CAMBIAR
+          image: ghcr.io/angepiedrahita87/proyectoweb:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
