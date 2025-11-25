@@ -3,9 +3,9 @@ services:
     image: postgres:16
     container_name: postgres_db
     environment:
-      POSTGRES_DB: proyectoweb
+      POSTGRES_DB: mydb
       POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypass
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
@@ -17,11 +17,10 @@ services:
     depends_on:
       - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/proyectoweb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/mydb
       SPRING_DATASOURCE_USERNAME: myuser
-      SPRING_DATASOURCE_PASSWORD: mypass
+      SPRING_DATASOURCE_PASSWORD: password
     ports:
       - "8080:8080"
-
 volumes:
   pgdata:

@@ -1,63 +1,67 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: tilines   # <- Reemplaza con el namespace que quieras usar
-
+  name: tilines
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: APP_NAME
-  namespace: NAMESPACE
+  name: proyectoweb
+  namespace: tilines
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: APP_NAME
+      app: proyectoweb
   template:
     metadata:
       labels:
-        app: APP_NAME
+        app: proyectoweb
     spec:
       containers:
-        - name: APP_NAME
-          image: dockerfile   # <- IMAGEN PUBLICADA EN GHCR
+        - name: proyectoweb
+          image: ghcr.io/merengonsitos/proyectoweb:latest   # CAMBIAR
           ports:
-            - containerPort: 80
-
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-service:5432/mydb
+            - name: SPRING_DATASOURCE_USERNAME
+              value: myuser
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: password
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: APP_NAME
-  namespace: NAMESPACE
+  name: proyectoweb
+  namespace: tilines
 spec:
   selector:
-    app: APP_NAME
+    app: proyectoweb
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 80
+      port: 8080
+      targetPort: 8080
   type: ClusterIP
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: APP_NAME
-  namespace: NAMESPACE
+  name: proyectoweb
+  namespace: tilines
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: public   # <- en MicroK8s normalmente es "public" (verifica con `kubectl get ingressclass`)
+  ingressClassName: public
   rules:
-    - host: 
+    - host: proyectoweb.10.43.102.73.nip.io
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: APP_NAME
+                name: proyectoweb
                 port:
-                  number: 80
+                  number: 8080

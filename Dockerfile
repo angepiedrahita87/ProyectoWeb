@@ -14,7 +14,7 @@ COPY . /app
 
 # Asegurar que el wrapper es ejecutable y compilar
 RUN chmod +x mvnw && sed -i 's/\r$//' mvnw && \
-    ./mvnw -B clean package -DskipTests
+    ./mvnw -B clean package -Dmaven.test.skip=true
 
 EXPOSE 8080
 
