@@ -11,7 +11,7 @@ env:
 jobs:
 
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -28,7 +28,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # o GHCR_TOKEN
 
       - name: Build Docker image
         run: docker build -t ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest .
@@ -37,9 +37,17 @@ jobs:
         run: docker push ghcr.io/${OWNER_LC}/${IMAGE_NAME}:latest
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-push
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Configurar kubectl (MicroK8s)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Aplicar manifiesto completo
+        run: kubectl apply -f k8s.yaml
