@@ -1,14 +1,22 @@
-FROM openjdk:17
+FROM ubuntu:22.04
 
-LABEL authors="sl345248"
+ENV DEBIAN_FRONTEND=noninteractive
 
-COPY . /app
+# Instalar Java y Maven
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN chmod +x mvnw && sed -i 's/\r$//' mvnw && ./mvnw -B clean install -DskipTests
+# Copiamos TODO el proyecto
+COPY . /app
+
+# Asegurar que el wrapper es ejecutable y compilar
+RUN chmod +x mvnw && sed -i 's/\r$//' mvnw && \
+    ./mvnw -B clean package -DskipTests
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/ProyectoWeb-0.0.1-SNAPSHOT.jar"]
-
+# Ejecutar el jar generado en target
+CMD ["sh", "-c", "java -jar target/*.jar"]
