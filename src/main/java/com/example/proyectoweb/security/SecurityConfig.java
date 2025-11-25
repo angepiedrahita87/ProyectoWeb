@@ -32,9 +32,6 @@ public class SecurityConfig {
                         // ENDPOINTS PÚBLICOS
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
                         ).permitAll()
                         // TODO: si quieres dejar otros públicos, agrégalos aquí
                         .anyRequest().authenticated()
