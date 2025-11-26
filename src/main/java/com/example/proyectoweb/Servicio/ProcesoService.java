@@ -151,21 +151,37 @@ public class ProcesoService {
 
         return repo.findById(id).map(p -> {
 
-            // valida organización
+            // validar organización
             checkSameOrg(p, actor);
 
-            // Si se pide hardDelete, solo ADMIN
-            if (hardDelete && actor.getRole() != Role.ADMIN) {
-                throw new RuntimeException("Solo un ADMIN puede eliminar definitivamente el proceso");
+            if (hardDelete) {
+                // Solo ADMIN puede hard delete
+                if (actor.getRole() != Role.ADMIN) {
+                    throw new RuntimeException("Solo un ADMIN puede eliminar definitivamente el proceso");
+                }
+
+                // 1️⃣ borrar historial asociado al proceso
+                var history = repoHistory.findAllByProceso_IdOrderByCreatedAtDesc(p.getId());
+                repoHistory.deleteAll(history);
+
+                // 2️⃣ borrar el proceso
+                repo.delete(p);
+
+            } else {
+                // Soft delete: marcar INACTIVE y dejar historial vivo
+                if (p.getStatus() == ProcessStatus.PUBLISHED) {
+                    p.setStatus(ProcessStatus.INACTIVE);
+                    repo.save(p);
+                    addHistory(p, actorEmail, "Soft delete (INACTIVE)");
+                } else {
+                    // si quieres, podrías simplemente borrarlo si está en DRAFT
+                    // repo.delete(p);
+                    p.setStatus(ProcessStatus.INACTIVE);
+                    repo.save(p);
+                    addHistory(p, actorEmail, "Soft delete (INACTIVE)");
+                }
             }
 
-            if (!hardDelete && p.getStatus() == ProcessStatus.PUBLISHED) {
-                p.setStatus(ProcessStatus.INACTIVE);
-                repo.save(p);
-                addHistory(p, actorEmail, "Soft delete (INACTIVE)");
-            } else {
-                repo.delete(p);
-            }
             return true;
         }).orElse(false);
     }
