@@ -12,4 +12,5 @@ import lombok.Setter;
 public class AuthorizedDto {
     private String token;
     private PersonaDto persona; 
+    private String roleName;
 }

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.proyectoweb.Dto.PersonaDto;
 import com.example.proyectoweb.Modelo.Organization;
 import com.example.proyectoweb.Modelo.Persona;
+import com.example.proyectoweb.Modelo.Role;
 import com.example.proyectoweb.Repo.RepoOrganization;
 import com.example.proyectoweb.Repo.RepoPersona;
 import com.example.proyectoweb.common.DomainExceptions.NotFound;
@@ -32,7 +33,7 @@ public class PersonaService {
         Persona e = mapper.map(dto, Persona.class);
         e.setId(null);
 
-        // 🔐 Hashear contraseña (si es obligatorio podrías validar que no venga null/blank)
+        // 🔐 Hashear contraseña
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             e.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -41,6 +42,13 @@ public class PersonaService {
             Organization org = repoOrg.findById(dto.getOrganizationId())
                     .orElseThrow(() -> new NotFound("Organización no encontrada"));
             e.setOrganization(org);
+        }
+
+        // 🎭 Asignar rol: si no viene, usamos un default (por ejemplo VIEWER)
+        if (dto.getRole() != null) {
+            e.setRole(dto.getRole());
+        } else if (e.getRole() == null) {
+            e.setRole(Role.VIEWER); // default sencillo
         }
 
         e = repo.save(e);
@@ -77,6 +85,11 @@ public class PersonaService {
                 existing.setOrganization(org);
             }
 
+            // 🎭 Actualizar rol si se envía uno nuevo en el DTO
+            if (dto.getRole() != null) {
+                existing.setRole(dto.getRole());
+            }
+
             return toDto(repo.save(existing));
         });
     }
@@ -98,6 +111,8 @@ public class PersonaService {
         dto.setOrganizationId(
                 e.getOrganization() != null ? e.getOrganization().getId() : null
         );
+        // Exponer rol al front
+        dto.setRole(e.getRole());
         // Nunca expone el password (ni el hash) al front
         dto.setPassword(null);
         return dto;

@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +30,15 @@ public class JwtUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
+        // Sacar el rol desde las authorities de Spring (ROLE_ADMIN, ROLE_EDITOR, etc.)
+        String role = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority) // ejemplo: "ROLE_ADMIN"
+                .orElse("ROLE_VIEWER");
+
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())   // email
+                .claim("role", role)                     // 🎭 metemos el rol como claim
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -45,6 +53,11 @@ public class JwtUtil {
 
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    // 🎭 Extraer rol desde el token si lo necesitas (para debug o front)
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {

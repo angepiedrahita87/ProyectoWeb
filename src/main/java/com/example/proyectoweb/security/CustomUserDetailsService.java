@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.example.proyectoweb.Modelo.Persona;
+import com.example.proyectoweb.Modelo.Role;
 import com.example.proyectoweb.Repo.RepoPersona;
 
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         Persona persona = repoPersona.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
-        // Por ahora todos ROLE_USER. Si algún día meten roles, se cambia acá.
-        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_USER");
+        // Obtener el rol real desde Persona
+        Role role = persona.getRole();
+        if (role == null) {
+            throw new UsernameNotFoundException("El usuario no tiene un rol asignado");
+        }
+
+        GrantedAuthority authority =
+                new SimpleGrantedAuthority("ROLE_" + role.name());
 
         return new User(
                 persona.getEmail(),

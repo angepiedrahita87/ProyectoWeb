@@ -1,5 +1,6 @@
 package com.example.proyectoweb.Modelo;
 
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,4 +26,7 @@ public class Persona {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="organization_id", foreignKey = @ForeignKey(name="fk_persona_org"))
     private Organization organization;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }

@@ -1,6 +1,5 @@
 package com.example.proyectoweb.Controller;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,12 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.proyectoweb.Dto.AuthenticationDto;
 import com.example.proyectoweb.Dto.AuthorizedDto;
@@ -27,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // por si el front pega desde otro host
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -37,7 +31,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthenticationDto request) {
         try {
-            // 1. Autenticar credenciales (email + password)
+            // 1. Autenticar credenciales
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
@@ -50,11 +44,13 @@ public class AuthController {
             // 2. Generar token
             String token = jwtUtil.generateToken(userDetails);
 
-            // 3. Traer info de la persona para el front
-            PersonaDto personaDto = personaService.obtenerPorEmail(request.getEmail())
+            // 3. Traer info de la persona usando el usuario autenticado
+            PersonaDto personaDto = personaService.obtenerPorEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            AuthorizedDto response = new AuthorizedDto(token, personaDto);
+            String roleName = personaDto.getRole() != null ? personaDto.getRole().name() : null;
+
+            AuthorizedDto response = new AuthorizedDto(token, personaDto, roleName);
 
             return ResponseEntity.ok(response);
 
