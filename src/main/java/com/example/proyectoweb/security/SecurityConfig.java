@@ -33,7 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // ENDPOINTS PÚBLICOS
                 .requestMatchers(
-                        "/api/auth/**",
+                        "/api/auth/**"
                 ).permitAll()
                 // Todo lo demás protegido
                 .anyRequest().authenticated()
